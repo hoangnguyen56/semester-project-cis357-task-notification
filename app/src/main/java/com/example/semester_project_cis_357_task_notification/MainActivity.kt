@@ -1,47 +1,31 @@
 package com.example.semester_project_cis_357_task_notification
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.semester_project_cis_357_task_notification.ui.theme.Semesterprojectcis357tasknotificationTheme
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
+    private lateinit var auth: FirebaseAuth
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            Semesterprojectcis357tasknotificationTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+
+        // Initialize FirebaseAuth
+        auth = FirebaseAuth.getInstance()
+
+        // Check if the user is logged in
+        if (auth.currentUser != null) {
+            // Redirect to TaskListActivity
+            val intent = Intent(this, TaskListActivity::class.java)
+            startActivity(intent)
+        } else {
+            // Redirect to LoginActivity
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
         }
-    }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Semesterprojectcis357tasknotificationTheme {
-        Greeting("Android")
+        // Finish MainActivity to remove it from the backstack
+        finish()
     }
 }

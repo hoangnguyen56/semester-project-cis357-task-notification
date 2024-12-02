@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "393455753097",
+    "project_id": "cis357-demo",
+    "storage_bucket": "cis357-demo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:393455753097:android:b56445824a52ef0ed0f358",
+        "android_client_info": {
+          "package_name": "com.example.semester_project_cis_357_task_notification"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzs3z66bwHj8ZQk9TCc1Lky0LTvrBf7QY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:393455753097:android:a0c7b9ddcce90f8cd0f358",
+        "android_client_info": {
+          "package_name": "edu.gvsu.cis357.android_firebase_compose"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzs3z66bwHj8ZQk9TCc1Lky0LTvrBf7QY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:393455753097:android:31ff687bbb25be0ad0f358",
+        "android_client_info": {
+          "package_name": "edu.gvsu.cis357.play1024"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzs3z66bwHj8ZQk9TCc1Lky0LTvrBf7QY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
