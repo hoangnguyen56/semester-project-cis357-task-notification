@@ -40,10 +40,16 @@ class LoginActivity : ComponentActivity() {
         // Initialize FirebaseAuth
         auth = FirebaseAuth.getInstance()
 
-        setContent {
-            SemesterProjectCIS357TaskNotificationTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    LoginScreen(auth = auth, onLoginSuccess = { navigateToTaskList() }, onRegister = { navigateToRegister() })
+        // Check if the user is already logged in
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            navigateToTaskList() // Skip login screen if already logged in
+        } else {
+            setContent {
+                SemesterProjectCIS357TaskNotificationTheme {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        LoginScreen(auth = auth, onLoginSuccess = { navigateToTaskList() }, onRegister = { navigateToRegister() })
+                    }
                 }
             }
         }

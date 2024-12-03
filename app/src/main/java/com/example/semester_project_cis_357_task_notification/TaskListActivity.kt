@@ -6,36 +6,20 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.semester_project_cis_357_task_notification.ui.theme.SemesterProjectCIS357TaskNotificationTheme
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -44,16 +28,26 @@ data class Task(
     val id: String = "",
     val title: String = "",
     val description: String = "",
-    val dueDate: String = ""
+    val dueDate: String = "",
+    val userId: String = ""
 )
 
 class TaskListActivity : ComponentActivity() {
     private val db = FirebaseFirestore.getInstance()
     private lateinit var taskListener: ListenerRegistration
     private val taskListState = mutableStateOf<List<Task>>(emptyList())
+    private lateinit var auth: FirebaseAuth
+    private var currentUserId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        auth = FirebaseAuth.getInstance()
+        currentUserId = auth.currentUser?.uid
+
+        if (currentUserId == null) {
+            logout()
+        }
+
         setContent {
             SemesterProjectCIS357TaskNotificationTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -91,10 +85,13 @@ class TaskListActivity : ComponentActivity() {
             return
         }
 
+        val userId = currentUserId ?: return
         val task = hashMapOf(
             "title" to title,
             "description" to description,
-            "dueDate" to dueDate
+            "dueDate" to dueDate,
+            "userId" to userId,
+            "createdAt" to Timestamp.now()
         )
 
         db.collection("tasks").add(task)
@@ -125,24 +122,28 @@ class TaskListActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        taskListener = db.collection("tasks").addSnapshotListener { snapshots, e ->
-            if (e != null) {
-                Toast.makeText(this, "Failed to listen for tasks", Toast.LENGTH_SHORT).show()
-                return@addSnapshotListener
-            }
-
-            snapshots?.let {
-                val tasks = it.documents.map { document ->
-                    Task(
-                        id = document.id,
-                        title = document.getString("title") ?: "",
-                        description = document.getString("description") ?: "",
-                        dueDate = document.getString("dueDate") ?: ""
-                    )
+        val userId = currentUserId ?: return
+        taskListener = db.collection("tasks")
+            .whereEqualTo("userId", userId)
+            .addSnapshotListener { snapshots, e ->
+                if (e != null) {
+                    Toast.makeText(this, "Failed to listen for tasks", Toast.LENGTH_SHORT).show()
+                    return@addSnapshotListener
                 }
-                taskListState.value = tasks
+
+                snapshots?.let {
+                    val tasks = it.documents.map { document ->
+                        Task(
+                            id = document.id,
+                            title = document.getString("title") ?: "",
+                            description = document.getString("description") ?: "",
+                            dueDate = document.getString("dueDate") ?: "",
+                            userId = document.getString("userId") ?: ""
+                        )
+                    }
+                    taskListState.value = tasks
+                }
             }
-        }
     }
 
     override fun onStop() {
@@ -170,12 +171,9 @@ fun TaskListScreen(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Logout Button
         Button(
             onClick = { onLogout() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Logout")
         }
@@ -195,7 +193,7 @@ fun TaskListScreen(
         OutlinedTextField(
             value = taskDueDate,
             onValueChange = { taskDueDate = it },
-            label = { Text("Due Date (e.g., 2024-12-01)") },
+            label = { Text("Due Date (YYYY-MM-DD)") },
             modifier = Modifier.fillMaxWidth()
         )
         Button(
@@ -208,7 +206,7 @@ fun TaskListScreen(
                 } else {
                     Toast.makeText(
                         context,
-                        "Title, description, and due date cannot be empty",
+                        "All fields are required",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -220,9 +218,7 @@ fun TaskListScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Task List", style = MaterialTheme.typography.headlineSmall)
-
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        LazyColumn {
             items(tasks) { task ->
                 TaskListItem(
                     task = task,
@@ -269,7 +265,7 @@ fun TaskListPreview() {
             onTaskClick = {},
             onSaveTask = { _, _, _, _ -> },
             onDeleteTask = { _, _ -> },
-            onLogout = { /* Handle Logout */ }
+            onLogout = {}
         )
     }
 }

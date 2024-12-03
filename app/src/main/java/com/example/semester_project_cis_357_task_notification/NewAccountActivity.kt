@@ -2,6 +2,7 @@ package com.example.semester_project_cis_357_task_notification
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -59,13 +60,13 @@ class NewAccountActivity : ComponentActivity() {
     private fun navigateToTaskList() {
         val intent = Intent(this, TaskListActivity::class.java)
         startActivity(intent)
-        finish() // Close NewAccountActivity
+        finish()
     }
 
     private fun navigateToLogin() {
         val intent = Intent(this, LoginActivity::class.java)
         startActivity(intent)
-        finish() // Close NewAccountActivity
+        finish()
     }
 }
 
@@ -87,7 +88,6 @@ fun NewAccountScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        // Title
         Text(
             text = "Create Account",
             style = MaterialTheme.typography.headlineLarge,
@@ -96,7 +96,6 @@ fun NewAccountScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Name Input
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
@@ -105,7 +104,6 @@ fun NewAccountScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Email Input
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -114,7 +112,6 @@ fun NewAccountScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Password Input
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -123,15 +120,15 @@ fun NewAccountScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Create Account Button
         Button(
             onClick = {
-                if (name.isNotBlank() && email.isNotBlank() && password.length >= 6) {
+                if (validateInput(name, email, password, context)) {
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
                                 val userId = auth.currentUser!!.uid
                                 val user = hashMapOf(
+                                    "userId" to userId,
                                     "realName" to name,
                                     "email" to email,
                                     "createdAt" to Timestamp.now()
@@ -142,18 +139,12 @@ fun NewAccountScreen(
                                         onAccountCreated()
                                     }
                                     .addOnFailureListener {
-                                        Toast.makeText(context, "Failed to save user data", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Failed to save user data: ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
                                     }
                             } else {
-                                Toast.makeText(context, "Failed to create account", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Failed to create account: ${task.exception?.localizedMessage}", Toast.LENGTH_SHORT).show()
                             }
                         }
-                } else {
-                    Toast.makeText(
-                        context,
-                        "All fields must be filled and password must be at least 6 characters long",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -162,13 +153,30 @@ fun NewAccountScreen(
         }
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Cancel Button
         Button(
             onClick = onCancel,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Cancel")
         }
+    }
+}
+
+private fun validateInput(name: String, email: String, password: String, context: android.content.Context): Boolean {
+    return when {
+        name.isBlank() -> {
+            Toast.makeText(context, "Name cannot be empty", Toast.LENGTH_SHORT).show()
+            false
+        }
+        email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+            Toast.makeText(context, "Invalid email address", Toast.LENGTH_SHORT).show()
+            false
+        }
+        password.length < 6 -> {
+            Toast.makeText(context, "Password must be at least 6 characters long", Toast.LENGTH_SHORT).show()
+            false
+        }
+        else -> true
     }
 }
 
