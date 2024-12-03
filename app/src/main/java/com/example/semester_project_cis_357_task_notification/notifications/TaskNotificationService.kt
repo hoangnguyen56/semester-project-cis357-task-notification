@@ -1,5 +1,6 @@
 package com.example.semester_project_cis_357_task_notification.notifications
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -7,6 +8,7 @@ import com.example.semester_project_cis_357_task_notification.R
 
 class TaskNotificationService(private val context: Context) {
 
+    @SuppressLint("MissingPermission")
     fun sendTaskCreatedNotification(title: String, description: String) {
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
