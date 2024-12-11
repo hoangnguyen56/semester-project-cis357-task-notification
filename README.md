@@ -120,19 +120,30 @@ Create a Firestore collection named `tasks`. Each document represents a task:
 ### Configure Firebase Cloud Messaging
 Implement a custom `FirebaseMessagingService`:
 ```kotlin
-override fun onMessageReceived(remoteMessage: RemoteMessage) {
-    Log.d(TAG, "Message received from: ${remoteMessage.from}")
+class TaskNotificationService : FirebaseMessagingService() {
 
-    // Handle notification payload
-    remoteMessage.notification?.let {
-        val title = it.title ?: "Task Notification"
-        val body = it.body ?: "You have a new task update."
-        sendNotification(title, body, null)
-    }
+   companion object {
+      private const val TAG = "TaskNotificationService"
+      private const val CHANNEL_ID = "task_notifications"
+      private const val CHANNEL_NAME = "Task Notifications"
+      private const val CHANNEL_DESCRIPTION = "Notifications for task updates and reminders"
+
+      // Keys for FCM data payload
+      private const val KEY_TASK_ID = "taskId"
+      private const val KEY_TASK_TITLE = "taskTitle"
+      private const val KEY_DUE_DATE = "dueDate"
+   }
+
+   override fun onMessageReceived(remoteMessage: RemoteMessage) {
+      Log.d(TAG, "Message received from: ${remoteMessage.from}")
+
+      // Handle notification payload
+      remoteMessage.notification?.let {
+         val title = it.title ?: "Task Notification"
+         val body = it.body ?: "You have a new task update."
+         sendNotification(title, body, null)
+      }
 ```
-
-Here’s the extracted **Step 3: Deploy with Cloud Function** section in README format:
-
 ---
 
 # Step 3: Deploy with Cloud Function
