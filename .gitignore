@@ -25,5 +25,8 @@ caches/8.7/
 caches/8.7/fileContent/
 caches/8.7/fileContent/fileContent.lock
 
+# Exclude all logs in the daemon directory
+daemon/**/*.log
+
 # Optional malformed entries (remove these completely):
 # c a c h e s / 8 . 7 / f i l e C o n t e n t / f i l e C o n t e n t . l o c k 
