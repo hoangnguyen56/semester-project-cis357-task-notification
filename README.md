@@ -1,6 +1,4 @@
 # semester-project-cis357-task-notification
-Below is a full tutorial for the **Task Notification App Using Firebase Cloud Messaging (FCM)** that you can post on GitHub as a `README.md` file.
-
 ---
 
 # Task Notification App Using Firebase Cloud Messaging (FCM)
