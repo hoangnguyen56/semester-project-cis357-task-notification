@@ -35,10 +35,9 @@ To follow this tutorial, ensure you have the following:
 3. **Add Dependencies**:
    Update your `build.gradle` file with the following dependencies:
    ```gradle
-   implementation 'com.google.firebase:firebase-auth:23.1.2'
-   implementation 'com.google.firebase:firebase-firestore:24.7.1'
-   implementation 'com.google.firebase:firebase-messaging:23.1.2'
-   implementation 'com.google.firebase:firebase-functions:20.3.2'
+   implementation("com.google.firebase:firebase-auth-ktx")
+   implementation("com.google.firebase:firebase-firestore-ktx")
+   implementation("com.google.firebase:firebase-messaging-ktx")
    ```
 
 4. **Sync the Project**: Sync your project to ensure all dependencies are installed.
