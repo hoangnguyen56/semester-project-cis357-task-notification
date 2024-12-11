@@ -146,9 +146,9 @@ class TaskNotificationService : FirebaseMessagingService() {
 ```
 ---
 
-# Step 3: Deploy with Cloud Function
+## Step 4: Deploy with Cloud Function
 
-## Initialize the Cloud Function
+### Initialize the Cloud Function
 
 To set up and deploy a Cloud Function for notifications, follow these steps:
 
