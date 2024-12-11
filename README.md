@@ -207,8 +207,6 @@ firebase deploy --only functions
 
 ### 6. Verify Deployment
 - Go to the Firebase Console and navigate to the **Functions** tab.
-- Confirm that the `sendTaskReminder` function is listed and deployed successfully.
-
 ---
 
 ## Testing the Function
