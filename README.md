@@ -205,7 +205,7 @@ Deploy the function to Firebase:
 firebase deploy --only functions
 ```
 
-### 6. Verify Deployment
+6. Verify Deployment
 - Go to the Firebase Console and navigate to the **Functions** tab.
 ---
 
