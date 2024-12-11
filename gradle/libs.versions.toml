@@ -10,10 +10,12 @@ activityCompose = "1.9.3" # Compose Activity integration version
 composeBom = "2024.04.01" # Jetpack Compose BOM (Bill of Materials) version
 firebaseBom = "32.2.3" # Firebase BOM version
 appcompat = "1.7.0" # AndroidX AppCompat
-recyclerview = "1.3.2"
-roomCommonJvm = "2.7.0-alpha11"
-navigationRuntimeKtx = "2.8.4"
-navigationCompose = "2.8.4" # RecyclerView
+recyclerview = "1.3.2" # RecyclerView version
+roomCommonJvm = "2.7.0-alpha11" # Room common JVM version
+navigationRuntimeKtx = "2.8.4" # Navigation runtime KTX
+navigationCompose = "2.8.4"
+animationCoreLint = "1.8.0-alpha06"
+material = "1.12.0" # Navigation Compose
 
 [libraries]
 # AndroidX Core and Utilities
@@ -34,6 +36,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 # Firebase Libraries
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx" }
 firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 
 # AndroidX UI Libraries
@@ -47,8 +50,10 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-room-common-jvm = { group = "androidx.room", name = "room-common-jvm", version.ref = "roomCommonJvm" }
 androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+androidx-animation-core-lint = { group = "androidx.compose.animation", name = "animation-core-lint", version.ref = "animationCoreLint" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-google-services = { id = "com.google.gms.google-services", version = "4.4.2" } # Update to latest if possible
+google-services = { id = "com.google.gms.google-services", version = "4.4.0" } # Ensure consistency with app-level build.gradle.kts

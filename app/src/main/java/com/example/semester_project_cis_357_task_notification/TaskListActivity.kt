@@ -44,8 +44,10 @@ class TaskListActivity : ComponentActivity() {
         auth = FirebaseAuth.getInstance()
         currentUserId = auth.currentUser?.uid
 
+        // If user not logged in, redirect to login immediately
         if (currentUserId == null) {
             logout()
+            return
         }
 
         setContent {
@@ -69,6 +71,11 @@ class TaskListActivity : ComponentActivity() {
     }
 
     private fun navigateToTaskDetails(taskId: String) {
+        if (taskId.isBlank()) {
+            Toast.makeText(this, "Invalid task ID", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val intent = Intent(this, TaskDetailsActivity::class.java)
         intent.putExtra("TASK_ID", taskId)
         startActivity(intent)
@@ -85,8 +92,12 @@ class TaskListActivity : ComponentActivity() {
             return
         }
 
-        val userId = currentUserId ?: return
-        val task = hashMapOf(
+        val userId = currentUserId ?: run {
+            Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val taskData = hashMapOf(
             "title" to title,
             "description" to description,
             "dueDate" to dueDate,
@@ -94,7 +105,7 @@ class TaskListActivity : ComponentActivity() {
             "createdAt" to Timestamp.now()
         )
 
-        db.collection("tasks").add(task)
+        db.collection("tasks").add(taskData)
             .addOnSuccessListener {
                 Toast.makeText(context, "Task saved successfully", Toast.LENGTH_SHORT).show()
             }
@@ -104,6 +115,11 @@ class TaskListActivity : ComponentActivity() {
     }
 
     private fun deleteTask(taskId: String, context: android.content.Context) {
+        if (taskId.isBlank()) {
+            Toast.makeText(context, "Invalid task ID for deletion", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         db.collection("tasks").document(taskId).delete()
             .addOnSuccessListener {
                 Toast.makeText(context, "Task deleted successfully", Toast.LENGTH_SHORT).show()

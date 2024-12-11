@@ -1,3 +1,4 @@
+
 package com.example.semester_project_cis_357_task_notification.data
 
 import com.google.firebase.auth.FirebaseAuth

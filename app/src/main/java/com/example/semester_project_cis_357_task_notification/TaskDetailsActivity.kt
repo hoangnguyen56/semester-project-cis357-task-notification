@@ -4,29 +4,11 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,6 +28,20 @@ class TaskDetailsActivity : ComponentActivity() {
 
         val taskId = intent.getStringExtra("TASK_ID") ?: ""
 
+        // Check if user is logged in
+        if (auth.currentUser == null) {
+            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        // Check if taskId is valid
+        if (taskId.isBlank()) {
+            Toast.makeText(this, "Invalid task ID", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
         setContent {
             SemesterProjectCIS357TaskNotificationTheme {
                 TaskDetailsScreen(
@@ -60,16 +56,13 @@ class TaskDetailsActivity : ComponentActivity() {
     }
 
     private fun startRealTimeTaskListener(taskId: String, onTaskLoaded: (String, String, String) -> Unit) {
-        val user = auth.currentUser
-        if (user == null) {
+        if (auth.currentUser == null) {
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
-        taskListener = db.collection("users")
-            .document(user.uid)
-            .collection("tasks")
+        taskListener = db.collection("tasks")
             .document(taskId)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
@@ -107,9 +100,7 @@ class TaskDetailsActivity : ComponentActivity() {
             "dueDate" to dueDate
         )
 
-        db.collection("users")
-            .document(user.uid)
-            .collection("tasks")
+        db.collection("tasks")
             .document(taskId)
             .update(updatedTask)
             .addOnSuccessListener {
@@ -128,9 +119,7 @@ class TaskDetailsActivity : ComponentActivity() {
             return
         }
 
-        db.collection("users")
-            .document(user.uid)
-            .collection("tasks")
+        db.collection("tasks")
             .document(taskId)
             .delete()
             .addOnSuccessListener {
@@ -144,7 +133,7 @@ class TaskDetailsActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        // Remove listener when the activity stops to prevent memory leaks
+        // Remove listener to prevent memory leaks
         taskListener?.remove()
     }
 }
