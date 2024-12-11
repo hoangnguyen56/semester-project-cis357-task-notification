@@ -18,33 +18,30 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.semester_project_cis_357_task_notification.data.FirestoreRepository
+import com.example.semester_project_cis_357_task_notification.data.Task
 import com.example.semester_project_cis_357_task_notification.ui.theme.SemesterProjectCIS357TaskNotificationTheme
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-
-data class Task(
-    val id: String = "",
-    val title: String = "",
-    val description: String = "",
-    val dueDate: String = "",
-    val userId: String = ""
-)
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class TaskListActivity : ComponentActivity() {
-    private val db = FirebaseFirestore.getInstance()
-    private lateinit var taskListener: ListenerRegistration
+
+    private val firestoreRepository = FirestoreRepository(FirebaseFirestore.getInstance())
     private val taskListState = mutableStateOf<List<Task>>(emptyList())
     private lateinit var auth: FirebaseAuth
     private var currentUserId: String? = null
+    private var taskListener: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         auth = FirebaseAuth.getInstance()
         currentUserId = auth.currentUser?.uid
 
-        // If user not logged in, redirect to login immediately
         if (currentUserId == null) {
             logout()
             return
@@ -68,103 +65,87 @@ class TaskListActivity : ComponentActivity() {
                 }
             }
         }
+
+        // Update FCM token for the logged-in user
+        updateFcmToken()
+    }
+
+    private fun updateFcmToken() {
+        val userId = currentUserId ?: return
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val fcmToken = task.result
+                if (!fcmToken.isNullOrEmpty()) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        firestoreRepository.updateFcmToken(userId, fcmToken)
+                    }
+                }
+            }
+        }
     }
 
     private fun navigateToTaskDetails(taskId: String) {
-        if (taskId.isBlank()) {
-            Toast.makeText(this, "Invalid task ID", Toast.LENGTH_SHORT).show()
-            return
+        val intent = Intent(this, TaskDetailsActivity::class.java).apply {
+            putExtra("TASK_ID", taskId)
         }
-
-        val intent = Intent(this, TaskDetailsActivity::class.java)
-        intent.putExtra("TASK_ID", taskId)
         startActivity(intent)
     }
 
-    private fun saveTask(
-        title: String,
-        description: String,
-        dueDate: String,
-        context: android.content.Context
-    ) {
-        if (title.isBlank() || description.isBlank() || dueDate.isBlank()) {
-            Toast.makeText(context, "Title, description, and due date cannot be empty", Toast.LENGTH_SHORT).show()
-            return
-        }
+    private fun saveTask(title: String, description: String, dueDate: String, context: android.content.Context) {
+        val userId = currentUserId ?: return
+        val task = Task(title = title, description = description, dueDate = dueDate, userId = userId)
 
-        val userId = currentUserId ?: run {
-            Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val taskData = hashMapOf(
-            "title" to title,
-            "description" to description,
-            "dueDate" to dueDate,
-            "userId" to userId,
-            "createdAt" to Timestamp.now()
-        )
-
-        db.collection("tasks").add(taskData)
-            .addOnSuccessListener {
-                Toast.makeText(context, "Task saved successfully", Toast.LENGTH_SHORT).show()
+        CoroutineScope(Dispatchers.IO).launch {
+            val success = firestoreRepository.addTask(task)
+            if (success) {
+                updateFcmToken()
             }
-            .addOnFailureListener {
-                Toast.makeText(context, "Failed to save task", Toast.LENGTH_SHORT).show()
+
+            CoroutineScope(Dispatchers.Main).launch {
+                Toast.makeText(
+                    context,
+                    if (success) "Task saved successfully" else "Failed to save task",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
+        }
     }
 
     private fun deleteTask(taskId: String, context: android.content.Context) {
-        if (taskId.isBlank()) {
-            Toast.makeText(context, "Invalid task ID for deletion", Toast.LENGTH_SHORT).show()
-            return
-        }
+        CoroutineScope(Dispatchers.IO).launch {
+            val success = firestoreRepository.deleteTask(taskId)
+            if (success) {
+                updateFcmToken()
+            }
 
-        db.collection("tasks").document(taskId).delete()
-            .addOnSuccessListener {
-                Toast.makeText(context, "Task deleted successfully", Toast.LENGTH_SHORT).show()
+            CoroutineScope(Dispatchers.Main).launch {
+                Toast.makeText(
+                    context,
+                    if (success) "Task deleted successfully" else "Failed to delete task",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
-            .addOnFailureListener {
-                Toast.makeText(context, "Failed to delete task", Toast.LENGTH_SHORT).show()
-            }
+        }
     }
 
     private fun logout() {
         FirebaseAuth.getInstance().signOut()
-        val intent = Intent(this, LoginActivity::class.java)
-        startActivity(intent)
+        startActivity(Intent(this, LoginActivity::class.java))
         finish()
     }
 
     override fun onStart() {
         super.onStart()
-        val userId = currentUserId ?: return
-        taskListener = db.collection("tasks")
-            .whereEqualTo("userId", userId)
-            .addSnapshotListener { snapshots, e ->
-                if (e != null) {
-                    Toast.makeText(this, "Failed to listen for tasks", Toast.LENGTH_SHORT).show()
-                    return@addSnapshotListener
-                }
-
-                snapshots?.let {
-                    val tasks = it.documents.map { document ->
-                        Task(
-                            id = document.id,
-                            title = document.getString("title") ?: "",
-                            description = document.getString("description") ?: "",
-                            dueDate = document.getString("dueDate") ?: "",
-                            userId = document.getString("userId") ?: ""
-                        )
-                    }
-                    taskListState.value = tasks
-                }
+        currentUserId?.let { userId ->
+            taskListener = firestoreRepository.addTaskListener(userId) { tasks ->
+                taskListState.value = tasks
             }
+        }
     }
 
     override fun onStop() {
         super.onStop()
-        taskListener.remove()
+        taskListener?.remove()
     }
 }
 

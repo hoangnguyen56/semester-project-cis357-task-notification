@@ -13,31 +13,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.semester_project_cis_357_task_notification.data.FirestoreRepository
 import com.example.semester_project_cis_357_task_notification.ui.theme.SemesterProjectCIS357TaskNotificationTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class TaskDetailsActivity : ComponentActivity() {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
-    private var taskListener: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val taskId = intent.getStringExtra("TASK_ID") ?: ""
-
-        // Check if user is logged in
-        if (auth.currentUser == null) {
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-
-        // Check if taskId is valid
-        if (taskId.isBlank()) {
-            Toast.makeText(this, "Invalid task ID", Toast.LENGTH_SHORT).show()
+        if (auth.currentUser == null || taskId.isBlank()) {
+            Toast.makeText(this, "Invalid task or user", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -56,13 +50,7 @@ class TaskDetailsActivity : ComponentActivity() {
     }
 
     private fun startRealTimeTaskListener(taskId: String, onTaskLoaded: (String, String, String) -> Unit) {
-        if (auth.currentUser == null) {
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-
-        taskListener = db.collection("tasks")
+        db.collection("tasks")
             .document(taskId)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
@@ -82,13 +70,6 @@ class TaskDetailsActivity : ComponentActivity() {
     }
 
     private fun updateTask(taskId: String, title: String, description: String, dueDate: String) {
-        val user = auth.currentUser
-        if (user == null) {
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-
         if (title.isBlank() || description.isBlank() || dueDate.isBlank()) {
             Toast.makeText(this, "Fields cannot be empty", Toast.LENGTH_SHORT).show()
             return
@@ -100,41 +81,47 @@ class TaskDetailsActivity : ComponentActivity() {
             "dueDate" to dueDate
         )
 
-        db.collection("tasks")
-            .document(taskId)
-            .update(updatedTask)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Task updated successfully", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, "Failed to update task", Toast.LENGTH_SHORT).show()
-            }
+        CoroutineScope(Dispatchers.IO).launch {
+            db.collection("tasks")
+                .document(taskId)
+                .update(updatedTask)
+                .addOnSuccessListener {
+                    Toast.makeText(this@TaskDetailsActivity, "Task updated successfully", Toast.LENGTH_SHORT).show()
+                    updateFcmToken()
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this@TaskDetailsActivity, "Failed to update task", Toast.LENGTH_SHORT).show()
+                }
+        }
     }
 
     private fun deleteTask(taskId: String) {
-        val user = auth.currentUser
-        if (user == null) {
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
-            finish()
-            return
+        CoroutineScope(Dispatchers.IO).launch {
+            db.collection("tasks")
+                .document(taskId)
+                .delete()
+                .addOnSuccessListener {
+                    Toast.makeText(this@TaskDetailsActivity, "Task deleted successfully", Toast.LENGTH_SHORT).show()
+                    updateFcmToken()
+                    finish()
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this@TaskDetailsActivity, "Failed to delete task", Toast.LENGTH_SHORT).show()
+                }
         }
-
-        db.collection("tasks")
-            .document(taskId)
-            .delete()
-            .addOnSuccessListener {
-                Toast.makeText(this, "Task deleted successfully", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, "Failed to delete task", Toast.LENGTH_SHORT).show()
-            }
     }
 
-    override fun onStop() {
-        super.onStop()
-        // Remove listener to prevent memory leaks
-        taskListener?.remove()
+    private fun updateFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val fcmToken = task.result
+                auth.currentUser?.uid?.let { userId ->
+                    CoroutineScope(Dispatchers.IO).launch {
+                        FirestoreRepository(FirebaseFirestore.getInstance()).updateFcmToken(userId, fcmToken ?: "")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -216,7 +203,8 @@ fun TaskDetailsScreen(
                     }
                     Button(
                         onClick = { deleteTask() },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
                         Text("Delete Task")
                     }

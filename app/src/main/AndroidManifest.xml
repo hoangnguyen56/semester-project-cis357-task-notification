@@ -5,6 +5,8 @@
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" /> <!-- For FCM -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- Prevents device from sleeping during notifications -->
 
     <application
         android:allowBackup="true"
@@ -33,33 +35,39 @@
         <activity
             android:name=".LoginActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.Semesterprojectcis357tasknotification" />
 
         <!-- NewAccountActivity -->
         <activity
             android:name=".NewAccountActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.Semesterprojectcis357tasknotification" />
 
         <!-- TaskListActivity -->
         <activity
             android:name=".TaskListActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.Semesterprojectcis357tasknotification" />
 
         <!-- TaskDetailsActivity -->
         <activity
             android:name=".TaskDetailsActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.Semesterprojectcis357tasknotification">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
             </intent-filter>
         </activity>
+
+        <!-- Firebase Messaging Service -->
+        <service
+            android:name="com.example.semester_project_cis_357_task_notification.notifications.TaskNotificationService"
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.RECEIVE">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
     </application>
 

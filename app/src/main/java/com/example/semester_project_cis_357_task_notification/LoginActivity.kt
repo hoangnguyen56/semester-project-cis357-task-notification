@@ -1,8 +1,8 @@
-
 package com.example.semester_project_cis_357_task_notification
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,8 +28,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.semester_project_cis_357_task_notification.data.FirestoreRepository
 import com.example.semester_project_cis_357_task_notification.ui.theme.SemesterProjectCIS357TaskNotificationTheme
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class LoginActivity : ComponentActivity() {
 
@@ -44,14 +50,47 @@ class LoginActivity : ComponentActivity() {
         // Check if the user is already logged in
         val currentUser = auth.currentUser
         if (currentUser != null) {
+            updateFcmTokenForLoggedInUser(currentUser.uid)
             navigateToTaskList() // Skip login screen if already logged in
         } else {
             setContent {
                 SemesterProjectCIS357TaskNotificationTheme {
                     Surface(modifier = Modifier.fillMaxSize()) {
-                        LoginScreen(auth = auth, onLoginSuccess = { navigateToTaskList() }, onRegister = { navigateToRegister() })
+                        LoginScreen(
+                            auth = auth,
+                            onLoginSuccess = { handleSuccessfulLogin() },
+                            onRegister = { navigateToRegister() }
+                        )
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Called after successful login to update FCM token and navigate to task list.
+     */
+    private fun handleSuccessfulLogin() {
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            updateFcmTokenForLoggedInUser(userId)
+        }
+        navigateToTaskList()
+    }
+
+    /**
+     * Updates the FCM token for the currently logged-in user.
+     */
+    private fun updateFcmTokenForLoggedInUser(userId: String) {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.e("LoginActivity", "Fetching FCM token failed", task.exception)
+                return@addOnCompleteListener
+            }
+            val fcmToken = task.result
+            CoroutineScope(Dispatchers.IO).launch {
+                FirestoreRepository(FirebaseFirestore.getInstance())
+                    .updateFcmToken(userId, fcmToken ?: "")
             }
         }
     }
@@ -138,6 +177,9 @@ fun LoginScreenPreview() {
     }
 }
 
+/**
+ * Handles the user login process using Firebase Authentication.
+ */
 private fun loginUser(
     auth: FirebaseAuth,
     email: String,
