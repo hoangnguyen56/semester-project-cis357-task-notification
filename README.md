@@ -160,7 +160,7 @@ Navigate to your project directory and initialize Cloud Functions:
 firebase init functions
 ```
 - Select your Firebase project.
-- Choose **JavaScript** or **TypeScript** as the language.
+- Choose **TypeScript** as the language.
 - Install dependencies when prompted.
 
 4. Add the Notification Function
@@ -218,8 +218,6 @@ firebase deploy --only functions
     - Check the Firebase Console for logs and status updates.
 
 ---
-
-Feel free to use this in your project documentation! Let me know if you need any more refinements.
 
 ## Testing the App
 
