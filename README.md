@@ -3,7 +3,7 @@
 
 # Task Notification App Using Firebase Cloud Messaging (FCM)
 
-This tutorial demonstrates how to build a **Task Notification App** using Firebase Cloud Messaging (FCM), Firebase Authentication, Firebase Firestore, and Firebase Cloud Functions. The app helps users manage tasks and receive real-time notifications about task events, such as task creation, updates, and deadline reminders.
+This tutorial demonstrates how to build a **Task Notification App** using Firebase Cloud Messaging (FCM), Firebase Authentication, Firebase Firestore, and Firebase Cloud Functions. The app helps users manage tasks and receive real-time notifications about task events, such as task creation, updates, and delete.
 
 ## Overview
 
